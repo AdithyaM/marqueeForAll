@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BusTimeTable</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<script type="text/javascript" src="js/jquery-3.2.1-min.js"></script>
+<script type="text/javascript" src="js/underscore-min.js"></script>
+<!-- <link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/styles.css"> -->
+<script type="text/javascript" src="js/handlebars-v4.0.11.js"></script>
+<script type="text/javascript" src="js/backbone-min.js"></script>
+</head>
+<body>
+
+<script id="bustable" type="text/template">
+<h2 id="bustimings">
+ {{each .}}
+  {{this}}
+ {{/each}}
+</h2>
+ 
+</script>
+
+<script>
+$(document).ready( function () {
+
+BusModel = Backbone.Model.extend({
+ fetch: function() {
+   var data = "<busTimetable>" +
+"<service>Jai 10:15 11:10</service>" +
+"<service>Jai 10:10 11:11</service>" +
+"<service>Veeru 10:10 11:00</service>" +
+"<service>Veeru 16:30 18:45</service>" +
+"<service>Jai 12:05 12:30</service>" +
+"</busTimetable>"
+  return data;
+ }
+});
+
+BusView = Backbone.View.extend({
+       templateDesktop : Handlebars.compile('#bustable'),
+       //templatePhone : ,
+       viewName : "NewloginView",
+       events : {  
+                 "keyup .Newloginput" :  "enterPre",             
+                 "keyup .newcontactInput" : "enterPre",
+                 "click .register" : "gotoSecureRegistration",
+                 "click #sendFormNew" : "sendFormNew",
+                 "click #sendFormNewPh" : "sendFormNewPh",
+       },
+       initialize : function() {
+          var data = this.model.fetch();
+          var jai = [];
+          var veeru = [];
+          var parser = new DOMParser();
+          var xmlDoc = parser.parseFromString(data,"text/xml");
+          $(xmlDoc).find('service').each ( function () {
+            var bustime = $(this).text();
+            if(bustime.indexOf('Jai') !== -1){
+              jai.push(bustime.slice(4));              
+            } else if (bustime.indexOf('Veeru') !== -1) {
+              veeru.push(bustime.slice(6));
+            }       
+          })
+          console.log('Veeru' + veeru)
+          this.rmMoreThanHr(jai, veeru)
+        
+          
+       },
+       rmMoreThanHr: function (jai, veeru) {
+          var filterjai =[];
+          var filterveeru =[];
+          //var depart = [];
+          //var arrl =[];
+          var i;
+          for (i =0 ; i<jai.length; i++) {
+            var depart = jai[i].substring(0,5);
+            var arrl = jai[i].substring(6);
+             if ((arrl.substring(2,0) - depart.substring(2,0)) === 1){
+                  console.log('jai' + jai);
+                 if (arrl.substring(3) < depart.substring(3)) {
+                      filterjai.push(jai[i])
+                 }
+
+             } else if ((arrl.substring(2,0) - depart.substring(2,0)) === 0){
+                      filterjai.push(jai[i])
+             }
+
+             
+          }
+          var models = {}
+          models.data = filterjai
+          this.render(models)
+       },
+
+
+       render: function (models) {
+          this.setElement($('#bustimings'));
+          var v = this;
+          console.log(models);
+          v.$el.html(v.templateDesktop(models.toJSON()));
+
+       }
+});
+
+busmodel = new BusModel()
+
+busView = new BusView ({ model:busmodel})
+});
+</script>
+
+</body>
+</html>
